@@ -53,6 +53,14 @@ let s:xterm_blinking_block = "\<Esc>[0 q"
 let s:xterm_blinking_line = "\<Esc>[5 q"
 let s:xterm_blinking_underline = "\<Esc>[3 q"
 
+let s:linux_blinking_underline = "\<Esc>[?2c"
+let s:linux_blinking_line = s:linux_blinking_underline " Can't draw line cursor, default to underline
+let s:linux_blinking_block = "\<Esc>[?8c"
+
+let s:linux_underline = s:linux_blinking_underline " Can't draw blinking underline, default to non-blinking
+let s:linux_line = s:linux_underline " Can't draw line cursor, default to underline
+let s:linux_block = "\<Esc>[?81;0;112c"
+
 let s:in_tmux = exists("$TMUX")
 
 let s:supported_terminal = ''
@@ -90,6 +98,8 @@ if s:supported_terminal == ""
         " box under KDE.
 
         let s:supported_terminal = 'cursorshape'
+    elseif $TERM == 'linux'
+        let s:supported_terminal = 'linux'
     endif
 endif
 
@@ -105,11 +115,16 @@ endif
 
 if !exists("g:togglecursor_default")
     let g:togglecursor_default = 'blinking_block'
+    if s:supported_terminal == 'linux'
+        let g:togglecursor_default = 'block'
+    endif
 endif
 
 if !exists("g:togglecursor_insert")
     let g:togglecursor_insert = 'blinking_line'
     if $XTERM_VERSION != "" && s:GetXtermVersion($XTERM_VERSION) < 282
+        let g:togglecursor_insert = 'blinking_underline'
+    elseif s:supported_terminal == 'linux'
         let g:togglecursor_insert = 'blinking_underline'
     endif
 endif
@@ -121,6 +136,8 @@ endif
 if !exists("g:togglecursor_leave")
     if str2nr($VTE_VERSION) >= 3900
         let g:togglecursor_leave = 'blinking_block'
+    elseif s:supported_terminal == 'linux'
+        let g:togglecursor_leave = 'blinking_underline'
     else
         let g:togglecursor_leave = 'block'
     endif
